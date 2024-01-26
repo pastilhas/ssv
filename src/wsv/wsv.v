@@ -1,7 +1,5 @@
 module wsv
 
-import encoding.utf8
-
 const (
 	space    = ` `
 	newline  = `\n`
@@ -11,15 +9,21 @@ const (
 	hash     = `#`
 )
 
-pub fn encode(table [][]?string) {
+pub fn encode(table [][]?string) []u8 {
 	mut res := []u8{}
 	for row in table {
 		for value in row {
-			if mut val := value {
+			if val := value {
+				res << escape_string(val).bytes()
 			} else {
+				res << u8(wsv.dash)
 			}
+			res << u8(wsv.space)
 		}
+		res.delete_last()
+		res << u8(wsv.newline)
 	}
+	return res
 }
 
 pub fn escape_string(val string) string {
@@ -27,12 +31,13 @@ pub fn escape_string(val string) string {
 		return '""'
 	}
 	runes := val.runes()
-	if val.len == 1 && runes[0] == wsv.dash {
+	if runes.len == 1 && runes[0] == wsv.dash {
 		return '"-"'
 	}
 	mut res := runes.clone()
 	mut contains_whitespace := false
-	for i := 0; i < runes.len; i++ {
+	mut j := 0
+	for i := 0; i < runes.len; i++, j++ {
 		r := runes[i]
 		if r == wsv.space {
 			contains_whitespace = true
@@ -40,7 +45,8 @@ pub fn escape_string(val string) string {
 		}
 		if r == wsv.d_quotes {
 			contains_whitespace = true
-			res.insert(i, wsv.d_quotes)
+			res.insert(j, wsv.d_quotes)
+			j++
 			continue
 		}
 		if r == wsv.hash {
@@ -49,8 +55,10 @@ pub fn escape_string(val string) string {
 		}
 		if r == wsv.newline {
 			contains_whitespace = true
-			res.delete(i)
-			res.insert(i, [wsv.d_quotes, wsv.slash, wsv.d_quotes])
+			res.delete(j)
+			res.insert(j, [wsv.d_quotes, wsv.slash, wsv.d_quotes])
+			j++
+			j++
 			continue
 		}
 	}

@@ -1,8 +1,7 @@
 module main
 
-import wsv
-
 fn main() {
-	a := wsv.escape_invalid('allo')
-	println(a)
+	a := checksum('abba'.bytes())
+	b := checksum('baab'.bytes())
+	println(a == b)
 }
